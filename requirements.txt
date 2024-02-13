@@ -1,4 +1,5 @@
 fastapi
+slowapi
 uvicorn
 pydantic
 opencv-python-headless

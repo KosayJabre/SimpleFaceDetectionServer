@@ -1,15 +1,21 @@
+import time
+
 from .service import detect_faces, download_image
 from .schemas import FaceDetectionRequest, FaceDetectionResponse
 
-from fastapi import FastAPI, HTTPException
-import time
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from fastapi import FastAPI, HTTPException, Request
 
 
 app = FastAPI()
+limiter = Limiter(key_func=get_remote_address)
 
 
+@limiter.limit("60/minute")
+@limiter.limit("5/second")
 @app.post("/detect_faces/", response_model=FaceDetectionResponse)
-def detect_faces_post(face_detection_request: FaceDetectionRequest):
+def detect_faces_post(request: Request, face_detection_request: FaceDetectionRequest):
     try:
         start = time.perf_counter()
 
