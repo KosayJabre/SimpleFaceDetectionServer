@@ -14,10 +14,22 @@ from torchvision.ops import nms
 from ..base import Detector
 from ..build import DETECTOR_REGISTRY
 import os 
+import zipfile
+import io
 
 
 current_file_directory = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(current_file_directory, "RetinaNetResNet50")
+model_path = os.path.join(current_file_directory, "RetinaNetResNet50.zip")
+
+
+# Use zipfile to open and read the model file into memory
+with zipfile.ZipFile(model_path, 'r') as zip_ref:
+    with zip_ref.open("RetinaNetResNet50") as model_file:
+        model_bytes = model_file.read()
+
+# Use io.BytesIO to create a file-like object from the bytes
+model_buffer = io.BytesIO(model_bytes)
+
 
 class RetinaNetDetector(Detector):
 
@@ -28,7 +40,7 @@ class RetinaNetDetector(Detector):
             **kwargs):
         super().__init__(*args, **kwargs)
         cfg = cfg_re50
-        state_dict = torch.load(model_path, map_location=torch.device('cpu'))
+        state_dict = torch.load(model_buffer, map_location=torch.device('cpu'))
         state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
         
         cfg = cfg_re50
