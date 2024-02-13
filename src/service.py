@@ -9,7 +9,6 @@ from .schemas import DetectorResponse, Face
 
 
 detector = RetinaNetDetector(
-    "RetinaNetResNet50",
     confidence_threshold=0.5,
     nms_iou_threshold=0.3,
     device=get_device(),
@@ -44,18 +43,3 @@ def detect_faces(image: np.ndarray) -> DetectorResponse:
         face = Face(bounding_box=bounding_box, confidence=confidence)
         faces.append(face)
     return DetectorResponse(faces_detected=len(faces), bounding_boxes=faces)
-
-
-# # For testing
-# def draw_faces(im, bboxes):
-#     for bbox in bboxes:
-#         x0, y0, x1, y1 = [int(_) for _ in bbox]
-#         cv2.rectangle(im, (x0, y0), (x1, y1), (0, 0, 255), 2)
-
-# image_url = "https://i.imgur.com/o4FejFz.jpeg"
-# cv2_image = download_image(image_url)
-# results = detect_faces(cv2_image)
-# draw_faces(cv2_image, [face.bounding_box for face in results.bounding_boxes])
-# cv2.imshow("Image", cv2_image)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()

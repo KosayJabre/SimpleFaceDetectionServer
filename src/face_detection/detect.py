@@ -26,7 +26,7 @@ def load_model_weights():
 
 
 class RetinaNetDetector(Detector):
-    def __init__(self, model: str, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         net = RetinaFace(cfg=RESNET50_CONFIG)
