@@ -1,60 +1,49 @@
-# Adapted from https://github.com/biubug6/Pytorch_Retinaface
-# Original license: MIT
 import torch
 import numpy as np
-from .. import torch_utils
+from . import utils
 import typing
-from .models.retinaface import RetinaFace
-from ..box_utils import batched_decode
+from .model import RetinaFace
+from .utils import batched_decode
 from .utils import decode_landm
-from .config import cfg_mnet, cfg_re50
+from .config import RESNET50_CONFIG
 from .prior_box import PriorBox
-from torch.hub import load_state_dict_from_url
 from torchvision.ops import nms
-from ..base import Detector
-from ..build import DETECTOR_REGISTRY
-import os 
+from .base import Detector
+import os
 import zipfile
 import io
 
 
-current_file_directory = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(current_file_directory, "RetinaNetResNet50.zip")
+def load_model_weights():
+    current_file_directory = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(current_file_directory, "RetinaNetResNet50.zip")
 
+    with zipfile.ZipFile(model_path, "r") as zip_ref:
+        with zip_ref.open("RetinaNetResNet50") as model_file:
+            model_bytes = model_file.read()
 
-# Use zipfile to open and read the model file into memory
-with zipfile.ZipFile(model_path, 'r') as zip_ref:
-    with zip_ref.open("RetinaNetResNet50") as model_file:
-        model_bytes = model_file.read()
-
-# Use io.BytesIO to create a file-like object from the bytes
-model_buffer = io.BytesIO(model_bytes)
+    return io.BytesIO(model_bytes)
 
 
 class RetinaNetDetector(Detector):
-
-    def __init__(
-            self,
-            model: str,
-            *args,
-            **kwargs):
+    def __init__(self, model: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        cfg = cfg_re50
-        state_dict = torch.load(model_buffer, map_location=torch.device('cpu'))
-        state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
-        
-        cfg = cfg_re50
-        net = RetinaFace(cfg=cfg)
-        
+
+        net = RetinaFace(cfg=RESNET50_CONFIG)
         net.eval()
+
+        state_dict = torch.load(load_model_weights(), map_location=torch.device("cpu"))
+        state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
         net.load_state_dict(state_dict)
-        self.cfg = cfg
+
+        self.cfg = RESNET50_CONFIG
         self.net = net.to(self.device)
         self.mean = np.array([104, 117, 123], dtype=np.float32)
         self.prior_box_cache = {}
 
     def batched_detect_with_landmarks(
-            self, image: np.ndarray) -> typing.Tuple[np.ndarray, np.ndarray]:
+        self, image: np.ndarray
+    ) -> typing.Tuple[np.ndarray, np.ndarray]:
         """Takes N images and performs and returns a set of bounding boxes as
             detections
         Args:
@@ -83,8 +72,7 @@ class RetinaNetDetector(Detector):
             scores_ = scores_[keep_idx]
             landms_ = landms_[keep_idx]
             # Non maxima suppression
-            keep_idx = nms(
-                boxes_, scores_, self.nms_iou_threshold)
+            keep_idx = nms(boxes_, scores_, self.nms_iou_threshold)
             boxes_ = boxes_[keep_idx]
             scores_ = scores_[keep_idx]
             landms_ = landms_[keep_idx]
@@ -99,16 +87,13 @@ class RetinaNetDetector(Detector):
             landms_ = landms_.cpu().numpy().reshape(-1, 5, 2)
             landms_[:, :, 0] *= width
             landms_[:, :, 1] *= height
-            dets = torch.cat(
-                (boxes_, scores_.view(-1, 1)), dim=1).cpu().numpy()
+            dets = torch.cat((boxes_, scores_.view(-1, 1)), dim=1).cpu().numpy()
             final_output_box.append(dets)
             final_output_landmarks.append(landms_)
         return final_output_box, final_output_landmarks
 
     @torch.no_grad()
-    def _detect(
-            self, image: np.ndarray,
-            return_landmarks=False) -> np.ndarray:
+    def _detect(self, image: np.ndarray, return_landmarks=False) -> np.ndarray:
         """Batched detect
         Args:
             image (np.ndarray): shape [N, H, W, 3]
@@ -123,29 +108,14 @@ class RetinaNetDetector(Detector):
             if image.shape[2:] in self.prior_box_cache:
                 priors = self.prior_box_cache[image.shape[2:]]
             else:
-                priorbox = PriorBox(
-                    self.cfg, image_size=(height, width))
+                priorbox = PriorBox(self.cfg, image_size=(height, width))
                 priors = priorbox.forward()
                 self.prior_box_cache[image.shape[2:]] = priors
-            priors = torch_utils.to_cuda(priors, self.device)
+            priors = utils.to_cuda(priors, self.device)
             prior_data = priors.data
-            boxes = batched_decode(loc, prior_data, self.cfg['variance'])
+            boxes = batched_decode(loc, prior_data, self.cfg["variance"])
             boxes = torch.cat((boxes, scores), dim=-1)
         if return_landmarks:
-            landms = decode_landm(landms, prior_data, self.cfg['variance'])
+            landms = decode_landm(landms, prior_data, self.cfg["variance"])
             return boxes, landms
         return boxes
-
-
-@DETECTOR_REGISTRY.register_module
-class RetinaNetResNet50(RetinaNetDetector):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__("resnet50", *args, **kwargs)
-
-
-@DETECTOR_REGISTRY.register_module
-class RetinaNetMobileNetV1(RetinaNetDetector):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__("mobilenet", *args, **kwargs)

@@ -1,4 +1,5 @@
-from .face_detection import build_detector
+from src.face_detection.detect import RetinaNetDetector
+from src.face_detection.utils import get_device
 
 import numpy as np
 import cv2
@@ -7,19 +8,24 @@ import requests
 from .schemas import DetectorResponse, Face
 
 
-detector = build_detector(
-    "RetinaNetMobileNetV1",
-    max_resolution=1080
+detector = RetinaNetDetector(
+    "RetinaNetResNet50",
+    confidence_threshold=0.5,
+    nms_iou_threshold=0.3,
+    device=get_device(),
+    max_resolution=None,
+    fp16_inference=False,
+    clip_boxes=False,
 )
 
 
 def download_image(image_url: str):
     try:
         response = requests.get(image_url)
-        response.raise_for_status()  
+        response.raise_for_status()
 
         image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
-        image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)  
+        image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
         return image
     except requests.HTTPError as http_err:

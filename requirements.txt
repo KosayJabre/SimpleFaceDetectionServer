@@ -1,10 +1,6 @@
 fastapi
-slowapi
 uvicorn
-celery[librabbitmq]
 pydantic
-redis
 opencv-python-headless
 requests
 torchvision[cpu]
-starlette
