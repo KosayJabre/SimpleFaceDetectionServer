@@ -1,4 +1,4 @@
-from .detect_faces import detect_faces, download_image
+from .service import detect_faces, download_image
 from .schemas import FaceDetectionRequest, FaceDetectionResponse
 
 from fastapi import FastAPI, HTTPException
