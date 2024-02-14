@@ -33,3 +33,9 @@ def detect_faces_post(request: Request, face_detection_request: FaceDetectionReq
             status_code=500,
             detail="Something went wrong internally. Please try again later.",
         )
+
+
+@limiter.limit("10/second")
+@app.get("/ready/")
+def ready(request: Request):
+    return "Ready"
