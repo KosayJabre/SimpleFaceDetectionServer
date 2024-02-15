@@ -16,26 +16,23 @@ limiter = Limiter(key_func=get_remote_address)
 @limiter.limit("5/second")
 @app.post("/detect_faces/", response_model=FaceDetectionResponse)
 def detect_faces_post(request: Request, face_detection_request: FaceDetectionRequest):
-    try:
-        start = time.perf_counter()
 
-        image = download_image(face_detection_request.image_url)
-        if image is None:
-            raise HTTPException(status_code=400, detail="Failed to download the image")
+    start = time.perf_counter()
 
-        results = detect_faces(image)
+    image = download_image(face_detection_request.image_url)
+    if image is None:
+        raise HTTPException(status_code=400, detail="Failed to download the image")
 
-        time_taken = time.perf_counter() - start
+    results = detect_faces(image)
 
-        return FaceDetectionResponse(result=results, time_taken=time_taken).model_dump()
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail="Something went wrong internally. Please try again later.",
-        )
+    time_taken = time.perf_counter() - start
+
+    return FaceDetectionResponse(result=results, time_taken=time_taken).model_dump()
 
 
 @limiter.limit("10/second")
 @app.get("/ready/")
 def ready(request: Request):
     return "Ready"
+
+
