@@ -2,14 +2,6 @@ import numpy as np
 import torch
 
 
-def check_image(im: np.ndarray):
-    assert im.dtype == np.uint8, f"Expect image to have dtype np.uint8. Was: {im.dtype}"
-    assert len(im.shape) == 4, f"Expected image to have 4 dimensions. got: {im.shape}"
-    assert (
-        im.shape[-1] == 3
-    ), f"Expected image to be RGB, got: {im.shape[-1]} color channels"
-
-
 def to_cuda(elements, device):
     if torch.cuda.is_available():
         if type(elements) == tuple or type(elements) == list:
@@ -45,13 +37,6 @@ def batched_decode(loc, priors, variances, to_XYXY=True):
     if to_XYXY:
         boxes[:, :, :2] -= boxes[:, :, 2:] / 2
         boxes[:, :, 2:] += boxes[:, :, :2]
-    return boxes
-
-
-def scale_boxes(imshape, boxes):
-    height, width = imshape
-    boxes[:, [0, 2]] *= width
-    boxes[:, [1, 3]] *= height
     return boxes
 
 

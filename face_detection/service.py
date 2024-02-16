@@ -9,12 +9,10 @@ from .schemas import DetectorResponse, Face, Landmark
 
 
 detector = RetinaNetDetector(
-    confidence_threshold=0.5,
     nms_iou_threshold=0.3,
     device=get_device(),
     max_resolution=None,
     fp16_inference=False,
-    clip_boxes=True,
 )
 
 
@@ -40,7 +38,7 @@ def bgr_to_rgb(image: np.ndarray) -> np.ndarray:
 def detect_faces(image: np.ndarray) -> DetectorResponse:
     image = bgr_to_rgb(image)
     image_batch = np.expand_dims(image, axis=0)
-    batch_boxes, batch_landmarks = detector.batched_detect_with_landmarks(image_batch)
+    batch_boxes, batch_landmarks = detector.detect(image_batch)
     image_boxes = batch_boxes[0]
     image_landmarks = batch_landmarks[0]
 
