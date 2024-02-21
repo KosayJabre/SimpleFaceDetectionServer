@@ -1,12 +1,21 @@
-from typing import List, Optional
+from enum import Enum
+from typing import List
 
 from pydantic import BaseModel
+
+
+class LandmarkType(Enum):
+    left_eye = "left_eye"
+    right_eye = "right_eye"
+    nose = "nose"
+    left_mouth = "left_mouth"
+    right_mouth = "right_mouth"
 
 
 class Landmark(BaseModel):
     x: float
     y: float
-    type: str
+    type: LandmarkType
 
 
 class Face(BaseModel):

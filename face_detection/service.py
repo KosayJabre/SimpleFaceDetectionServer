@@ -8,7 +8,7 @@ from PIL import Image
 
 from face_detection.model.detector import RetinaNetDetector
 
-from .schemas import DetectorResponse, Face, Landmark
+from .schemas import DetectorResponse, Face, Landmark, LandmarkType
 
 
 detector = RetinaNetDetector(
@@ -67,10 +67,7 @@ def detect_faces(images: List[Image.Image]) -> List[DetectorResponse]:
             face = Face(
                 bounding_box=bounding_box,
                 confidence=confidence,
-                landmarks=[
-                    Landmark(x=landmark[0], y=landmark[1], type="landmark")
-                    for landmark in landmarks
-                ],
+                landmarks=[Landmark(x=landmark[0], y=landmark[1], type=list(LandmarkType)[i]) for i, landmark in enumerate(landmarks)],
             )
             faces.append(face)
         detector_responses.append(DetectorResponse(faces_count=len(faces), faces=faces))

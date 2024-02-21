@@ -1,6 +1,7 @@
 from face_detection.service import detect_faces, download_image
 
-from PIL import ImageDraw
+from PIL import ImageDraw, ImageFont
+
 
 def draw_faces(image, bboxes):
     draw = ImageDraw.Draw(image)
@@ -8,16 +9,19 @@ def draw_faces(image, bboxes):
         x0, y0, x1, y1 = [int(_) for _ in bbox]
         draw.rectangle([x0, y0, x1, y1], outline="red", width=2)
 
+
 def draw_landmarks(image, faces_landmarks):
     draw = ImageDraw.Draw(image)
+    font = ImageFont.load_default()
+    
     for landmarks in faces_landmarks:
         for landmark in landmarks:
             x, y = int(landmark.x), int(landmark.y)
-            # For drawing a circle, PIL expects the bounding box of the circle,
-            # so we calculate it based on the circle's radius.
+            landmark_type = landmark.type.name
             radius = 2
             draw.ellipse([x - radius, y - radius, x + radius, y + radius], fill="lime")
-
+            text_position = (x + radius + 2, y - radius)
+            draw.text(text_position, landmark_type, fill="white", font=font)
 
 
 if __name__ == "__main__":                
