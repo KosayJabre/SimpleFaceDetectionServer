@@ -43,8 +43,8 @@ async def detect_faces_from_base64(request: Request, face_detection_request: Bas
 
 
 @limiter.limit("10/second")
-@app.post("/detect_faces_from_binary/")
-async def detect_faces_from_binary(
+@app.post("/detect_faces_from_files/")
+async def detect_faces_from_files(
     request: Request,
     files: List[UploadFile] = File(...),
     confidence_threshold: float = Form(0.5),
