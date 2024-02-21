@@ -11,3 +11,5 @@ Navigate to `localhost:8000/docs` and use the GUI to call the API.
 - Add more tests
 - Add support for custom ports in Docker compose
 - Add support for landmarks
+- Add parameter for clipping
+- Add parameter for confidence
