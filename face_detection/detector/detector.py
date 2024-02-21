@@ -11,7 +11,7 @@ from .config import RESNET50_CONFIG
 from .network import RetinaFace
 from .prior_box import PriorBox
 from .utils import batched_decode, decode_landm, get_device
-
+from PIL import Image
 
 def load_model_weights():
     current_file_directory = os.path.dirname(os.path.abspath(__file__))
@@ -43,8 +43,19 @@ class RetinaNetDetector:
         self.net = net.to(get_device())
 
     def detect(self, images: np.ndarray, confidence_threshold=0.5, clip_boxes=True) -> tuple[np.ndarray, np.ndarray]:
+        # Resize images to max 1080x1080 because model only works well on smaller images
+        max_resolution = (1080, 1080)  
+        orig_shapes = [img.shape[:2] for img in images]
+        resized_images = []
+        for image in images:
+            if image.shape[0] > max_resolution[0] or image.shape[1] > max_resolution[1]:
+                img = Image.fromarray(image.astype('uint8'), 'RGB')
+                img.thumbnail(max_resolution, Image.LANCZOS)
+                image = np.array(img)
+            resized_images.append(image)
+        images = np.array(resized_images)
+
         processed_images = self._pre_process(images)
-        orig_shape = images.shape[1:3]
         boxes, landms = self._detect(processed_images, return_landmarks=True)
 
         final_output_box = []
@@ -60,11 +71,11 @@ class RetinaNetDetector:
             boxes_i, landms_i, scores_i = boxes_i[keep], landms_i[keep], scores_i[keep]
             if clip_boxes:
                 boxes_i = boxes_i.clamp(0, 1)
-            boxes_i[:, [0, 2]] *= orig_shape[1]
-            boxes_i[:, [1, 3]] *= orig_shape[0]
+            boxes_i[:, [0, 2]] *= orig_shapes[i][1]
+            boxes_i[:, [1, 3]] *= orig_shapes[i][0]
             landms_i = landms_i.reshape(-1, 5, 2)
-            landms_i[:, :, 0] *= orig_shape[1]
-            landms_i[:, :, 1] *= orig_shape[0]
+            landms_i[:, :, 0] *= orig_shapes[i][1]
+            landms_i[:, :, 1] *= orig_shapes[i][0]
             final_output_box.append(torch.cat((boxes_i, scores_i.unsqueeze(-1)), dim=1).cpu().numpy())
             final_output_landmarks.append(landms_i.cpu().numpy())
 
