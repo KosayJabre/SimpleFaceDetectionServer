@@ -16,51 +16,41 @@ limiter = Limiter(key_func=get_remote_address)
 
 @limiter.limit("10/second")
 @app.post("/detect_faces_from_urls/", response_model=FaceDetectionResponse)
-def detect_faces_from_urls(request: Request, face_detection_request: UrlFaceDetectionRequest):
-    start = time.perf_counter()
-
+async def detect_faces_from_urls(request: Request, face_detection_request: UrlFaceDetectionRequest):
     with ThreadPoolExecutor() as executor:
         images = list(executor.map(download_image, face_detection_request.images_url))
 
     results = detect_faces(images)
 
-    time_taken = time.perf_counter() - start
-
-    return FaceDetectionResponse(result=results, time_taken=time_taken).model_dump()
+    return FaceDetectionResponse(result=results).model_dump()
 
 
 @limiter.limit("10/second")
 @app.post("/detect_faces_from_base64/", response_model=FaceDetectionResponse)
-def detect_faces_from_base64(request: Request, face_detection_request: Base64FaceDetectionRequest):
-    start = time.perf_counter()
-
+async def detect_faces_from_base64(request: Request, face_detection_request: Base64FaceDetectionRequest):
     images = [base64_to_image(image) for image in face_detection_request.images_base64]
+    
     results = detect_faces(images)
 
-    time_taken = time.perf_counter() - start
-
-    return FaceDetectionResponse(result=results, time_taken=time_taken).model_dump()
+    return FaceDetectionResponse(result=results).model_dump()
 
 
 @limiter.limit("10/second")
 @app.post("/detect_faces_from_binary/")
 async def detect_faces_from_binary(request: Request, files: List[UploadFile] = File(...)):
-    start = time.perf_counter()
-
     images = []
     for file in files:
         image_data = await file.read()
         image = binary_to_image(image_data)
         images.append(image)
         await file.close()
+
     results = detect_faces(images)
 
-    time_taken = time.perf_counter() - start
-
-    return FaceDetectionResponse(resul=results, time_taken=time_taken).model_dump()
+    return FaceDetectionResponse(resul=results).model_dump()
 
 
 @limiter.limit("10/second")
 @app.get("/ready/")
-def ready(request: Request):
+async def ready(request: Request):
     return "Ready"

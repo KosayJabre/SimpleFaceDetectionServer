@@ -30,4 +30,3 @@ class Base64FaceDetectionRequest(BaseModel):
 
 class FaceDetectionResponse(BaseModel):
     result: List[DetectorResponse]
-    time_taken: float
