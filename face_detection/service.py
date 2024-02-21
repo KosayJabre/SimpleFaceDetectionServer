@@ -1,3 +1,5 @@
+from typing import List
+
 import cv2
 import numpy as np
 import requests
@@ -6,6 +8,7 @@ from face_detection.model.detector import RetinaNetDetector
 from face_detection.model.utils import get_device
 
 from .schemas import DetectorResponse, Face, Landmark
+
 
 detector = RetinaNetDetector(
     nms_iou_threshold=0.3,
@@ -36,24 +39,26 @@ def bgr_to_rgb(image: np.ndarray) -> np.ndarray:
     return image[:, :, ::-1]
 
 
-def detect_faces(image: np.ndarray) -> DetectorResponse:
-    image = bgr_to_rgb(image)
-    image_batch = np.expand_dims(image, axis=0)
-    batch_boxes, batch_landmarks = detector.detect(image_batch)
-    image_boxes = batch_boxes[0]
-    image_landmarks = batch_landmarks[0]
+def detect_faces(images: List[np.ndarray]) -> List[DetectorResponse]:
+    images = np.array([bgr_to_rgb(image) for image in images]) 
+    
+    batch_boxes, batch_landmarks = detector.detect(images)
 
-    faces = []
-    for box, landmarks in zip(image_boxes, image_landmarks):
-        bounding_box = box[:4]
-        confidence = box[4]
-        face = Face(
-            bounding_box=bounding_box,
-            confidence=confidence,
-            landmarks=[
-                Landmark(x=landmark[0], y=landmark[1], type="landmark")
-                for landmark in landmarks
-            ],
-        )
-        faces.append(face)
-    return DetectorResponse(faces_count=len(faces), faces=faces)
+    detector_responses = []
+    for image_boxes, image_landmarks in zip(batch_boxes, batch_landmarks): 
+        faces = []
+        for box, landmarks in zip(image_boxes, image_landmarks):
+            bounding_box = box[:4]
+            confidence = box[4]
+            face = Face(
+                bounding_box=bounding_box,
+                confidence=confidence,
+                landmarks=[
+                    Landmark(x=landmark[0], y=landmark[1], type="landmark")
+                    for landmark in landmarks
+                ],
+            )
+            faces.append(face)
+        detector_responses.append(DetectorResponse(faces_count=len(faces), faces=faces))
+    
+    return detector_responses

@@ -19,9 +19,10 @@ def draw_landmarks(im, faces_landmarks):
 if __name__ == "__main__":                
     image_url = "https://i.imgur.com/o4FejFz.jpeg"
     cv2_image = download_image(image_url)
-    results = detect_faces(cv2_image)
-    draw_faces(cv2_image, [face.bounding_box for face in results.faces])
-    draw_landmarks(cv2_image, [face.landmarks for face in results.faces])
-    cv2.imshow("Image", cv2_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    results = detect_faces([cv2_image, cv2_image])
+    for result in results:
+        draw_faces(cv2_image, [face.bounding_box for face in result.faces])
+        draw_landmarks(cv2_image, [face.landmarks for face in result.faces])
+        cv2.imshow("Image", cv2_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()

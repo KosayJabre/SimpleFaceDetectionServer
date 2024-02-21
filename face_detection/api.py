@@ -16,14 +16,10 @@ limiter = Limiter(key_func=get_remote_address)
 @limiter.limit("5/second")
 @app.post("/detect_faces/", response_model=FaceDetectionResponse)
 def detect_faces_post(request: Request, face_detection_request: FaceDetectionRequest):
-
     start = time.perf_counter()
 
-    image = download_image(face_detection_request.image_url)
-    if image is None:
-        raise HTTPException(status_code=400, detail="Failed to download the image")
-
-    results = detect_faces(image)
+    images = [download_image(image_url) for image_url in face_detection_request.images_url]
+    results = detect_faces(images)
 
     time_taken = time.perf_counter() - start
 

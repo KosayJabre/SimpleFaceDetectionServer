@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -21,9 +21,11 @@ class DetectorResponse(BaseModel):
 
 
 class FaceDetectionRequest(BaseModel):
-    image_url: str
+    images_url: Optional[List[str]]
+    images_base64: Optional[List[str]]
+    images_binary: Optional[List[bytes]]
 
 
 class FaceDetectionResponse(BaseModel):
-    result: DetectorResponse
+    result: List[DetectorResponse]
     time_taken: float
