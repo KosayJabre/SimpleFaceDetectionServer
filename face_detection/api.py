@@ -1,12 +1,14 @@
 import time
 from concurrent.futures import ThreadPoolExecutor
+from typing import List
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, File, Request, UploadFile
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from .schemas import Base64FaceDetectionRequest, FaceDetectionResponse, UrlFaceDetectionRequest
-from .service import base64_to_image, detect_faces, download_image
+from .service import base64_to_image, binary_to_image, detect_faces, download_image
+
 
 app = FastAPI()
 limiter = Limiter(key_func=get_remote_address)
@@ -38,6 +40,27 @@ def detect_faces_from_base64(request: Request, face_detection_request: Base64Fac
     time_taken = time.perf_counter() - start
 
     return FaceDetectionResponse(result=results, time_taken=time_taken).model_dump()
+
+
+@app.post("/detect_faces_from_binary/")
+async def detect_faces_from_binary(files: List[UploadFile] = File(...)):
+    images = []
+    for file in files:
+        # Each file is an UploadFile
+        image_data = await file.read()
+        # Convert binary data to a PIL image
+        image = binary_to_image(image_data)
+        images.append(image)
+        # It's important to close the file after processing
+        await file.close()
+
+    # Process images with your face detection logic
+    results = detect_faces(images)
+
+    # Assuming you have a way to calculate the time taken
+    time_taken = 3
+
+    return {"result": results, "time_taken": time_taken}
 
 
 @limiter.limit("10/second")

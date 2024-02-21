@@ -28,10 +28,6 @@ class Base64FaceDetectionRequest(BaseModel):
     images_base64: List[str]
 
 
-class BinaryFaceDetectionRequest(BaseModel):
-    images_binary: List[bytes]
-
-
 class FaceDetectionResponse(BaseModel):
     result: List[DetectorResponse]
     time_taken: float

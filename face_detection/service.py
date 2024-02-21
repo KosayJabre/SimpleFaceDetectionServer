@@ -45,9 +45,14 @@ def base64_to_image(base64_str: str) -> Image.Image:
     return image
 
 
-def bgr_to_rgb(image: np.ndarray) -> np.ndarray:
-    # OpenCV reads images in BGR format for some reason
-    return image[:, :, ::-1]
+def binary_to_image(binary: bytes) -> Image.Image:
+    image_file = BytesIO(binary)
+    image = Image.open(image_file)
+
+    if image.mode != 'RGB':
+        image = image.convert('RGB')
+
+    return image
 
 
 def detect_faces(images: List[Image.Image]) -> List[DetectorResponse]:

@@ -5,3 +5,4 @@ pydantic
 requests
 torchvision[cpu]
 Pillow
+python-multipart
