@@ -10,7 +10,7 @@ from torchvision.ops import nms
 from .config import RESNET50_CONFIG
 from .network import RetinaFace
 from .prior_box import PriorBox
-from .utils import batched_decode, decode_landm
+from .utils import batched_decode, decode_landm, get_device
 
 
 def load_model_weights():
@@ -32,12 +32,10 @@ class RetinaNetDetector:
     def __init__(
         self,
         nms_iou_threshold: float,
-        device: torch.device,
         max_resolution: int,
         fp16_inference: bool,
     ):
         self.nms_iou_threshold = nms_iou_threshold
-        self.device = device
         self.max_resolution = max_resolution
         self.fp16_inference = fp16_inference
         self.mean = np.array([104, 117, 123], dtype=np.float32)
@@ -46,11 +44,11 @@ class RetinaNetDetector:
 
         net = RetinaFace(cfg=self.cfg)
         net.eval()
-        state_dict = torch.load(load_model_weights(), map_location=torch.device("cpu"))
+        state_dict = torch.load(load_model_weights(), map_location=get_device())
         state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
         net.load_state_dict(state_dict)
 
-        self.net = net.to(self.device)
+        self.net = net.to(get_device())
 
     def detect(
         self,
@@ -98,7 +96,7 @@ class RetinaNetDetector:
             image = torch.nn.functional.interpolate(
                 image[None], size=size, mode="bilinear", align_corners=False
             )
-        return image.to(self.device)
+        return image.to(get_device())
 
     @torch.no_grad()
     def _detect(self, image: torch.Tensor, return_landmarks=False):
@@ -122,4 +120,4 @@ class RetinaNetDetector:
         priorbox = PriorBox(self.cfg, image_size=image_size)
         priors = priorbox.forward()
         self.prior_box_cache[image_size] = priors
-        return priors.to(self.device)
+        return priors.to(get_device())

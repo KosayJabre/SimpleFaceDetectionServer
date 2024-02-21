@@ -1,8 +1,9 @@
+--extra-index-url https://download.pytorch.org/whl/cu121
 fastapi
 slowapi
 uvicorn
 pydantic
 requests
-torchvision[cpu]
+torchvision
 Pillow
 python-multipart

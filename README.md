@@ -8,8 +8,6 @@ Navigate to `localhost:8000/docs` and use the GUI to call the API.
 
 
 ## To-do
-- Add GPU support
-- Add API support for binary files
 - Add more tests
 - Add support for custom ports in Docker compose
 - Add support for landmarks

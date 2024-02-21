@@ -7,14 +7,12 @@ import requests
 from PIL import Image
 
 from face_detection.model.detector import RetinaNetDetector
-from face_detection.model.utils import get_device
 
 from .schemas import DetectorResponse, Face, Landmark
 
 
 detector = RetinaNetDetector(
     nms_iou_threshold=0.3,
-    device=get_device(),
     max_resolution=None,
     fp16_inference=False,
 )
