@@ -42,25 +42,22 @@ def detect_faces_from_base64(request: Request, face_detection_request: Base64Fac
     return FaceDetectionResponse(result=results, time_taken=time_taken).model_dump()
 
 
+@limiter.limit("10/second")
 @app.post("/detect_faces_from_binary/")
-async def detect_faces_from_binary(files: List[UploadFile] = File(...)):
+async def detect_faces_from_binary(request: Request, files: List[UploadFile] = File(...)):
+    start = time.perf_counter()
+
     images = []
     for file in files:
-        # Each file is an UploadFile
         image_data = await file.read()
-        # Convert binary data to a PIL image
         image = binary_to_image(image_data)
         images.append(image)
-        # It's important to close the file after processing
         await file.close()
-
-    # Process images with your face detection logic
     results = detect_faces(images)
 
-    # Assuming you have a way to calculate the time taken
-    time_taken = 3
+    time_taken = time.perf_counter() - start
 
-    return {"result": results, "time_taken": time_taken}
+    return FaceDetectionResponse(resul=results, time_taken=time_taken).model_dump()
 
 
 @limiter.limit("10/second")
