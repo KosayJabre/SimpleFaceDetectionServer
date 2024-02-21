@@ -1,4 +1,5 @@
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import FastAPI, HTTPException, Request
 from slowapi import Limiter
@@ -6,7 +7,6 @@ from slowapi.util import get_remote_address
 
 from .schemas import FaceDetectionRequest, FaceDetectionResponse
 from .service import detect_faces, download_image
-
 
 app = FastAPI()
 limiter = Limiter(key_func=get_remote_address)
@@ -18,7 +18,9 @@ limiter = Limiter(key_func=get_remote_address)
 def detect_faces_post(request: Request, face_detection_request: FaceDetectionRequest):
     start = time.perf_counter()
 
-    images = [download_image(image_url) for image_url in face_detection_request.images_url]
+    with ThreadPoolExecutor() as executor:
+        images = list(executor.map(download_image, face_detection_request.images_url))
+
     results = detect_faces(images)
 
     time_taken = time.perf_counter() - start
