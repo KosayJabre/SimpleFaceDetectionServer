@@ -1,10 +1,12 @@
-from pydantic import BaseModel
 from typing import List
+
+from pydantic import BaseModel
 
 
 class Landmark(BaseModel):
     x: float
     y: float
+    type: str
 
 
 class Face(BaseModel):
@@ -14,7 +16,7 @@ class Face(BaseModel):
 
 
 class DetectorResponse(BaseModel):
-    faces_detected: int
+    faces_count: int
     faces: List[Face]
 
 

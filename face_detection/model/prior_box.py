@@ -1,10 +1,12 @@
-import torch
-import numpy as np
 from math import ceil
+
+import numpy as np
+import torch
+
 
 def generate_prior_box(feature_maps, image_size, steps, min_sizes):
     n_anchors = sum(f[0] * f[1] * len(min_sizes[0]) for f in feature_maps)
-    anchors = np.empty((n_anchors, 4), dtype=np.float32)  # Use a 2D array for clarity
+    anchors = np.empty((n_anchors, 4), dtype=np.float32)
     idx_anchor = 0
     for k, f in enumerate(feature_maps):
         for i in range(f[0]):
@@ -17,6 +19,7 @@ def generate_prior_box(feature_maps, image_size, steps, min_sizes):
                     anchors[idx_anchor] = [cx, cy, s_kx, s_ky]
                     idx_anchor += 1
     return anchors
+
 
 class PriorBox:
     def __init__(self, cfg, image_size=None):
@@ -33,7 +36,7 @@ class PriorBox:
         anchors = generate_prior_box(
             self.feature_maps, self.image_size, self.steps, self.min_sizes
         )
-        output = torch.from_numpy(anchors).float()  # Ensure it's a float tensor
+        output = torch.from_numpy(anchors).float()
         if self.clip:
             output.clamp_(max=1, min=0)
         return output

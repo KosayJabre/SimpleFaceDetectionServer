@@ -1,12 +1,11 @@
+import cv2
+import numpy as np
+import requests
+
 from face_detection.model.detector import RetinaNetDetector
 from face_detection.model.utils import get_device
 
-import numpy as np
-import cv2
-import requests
-
 from .schemas import DetectorResponse, Face, Landmark
-
 
 detector = RetinaNetDetector(
     nms_iou_threshold=0.3,
@@ -31,9 +30,11 @@ def download_image(image_url: str):
         print(f"An error occurred: {err}")
         return None
 
+
 def bgr_to_rgb(image: np.ndarray) -> np.ndarray:
     # OpenCV reads images in BGR format for some reason
     return image[:, :, ::-1]
+
 
 def detect_faces(image: np.ndarray) -> DetectorResponse:
     image = bgr_to_rgb(image)
@@ -46,8 +47,13 @@ def detect_faces(image: np.ndarray) -> DetectorResponse:
     for box, landmarks in zip(image_boxes, image_landmarks):
         bounding_box = box[:4]
         confidence = box[4]
-        face = Face(bounding_box=bounding_box, confidence=confidence, landmarks=[Landmark(x=landmark[0], y=landmark[1]) for landmark in landmarks])
+        face = Face(
+            bounding_box=bounding_box,
+            confidence=confidence,
+            landmarks=[
+                Landmark(x=landmark[0], y=landmark[1], type="landmark")
+                for landmark in landmarks
+            ],
+        )
         faces.append(face)
-    return DetectorResponse(faces_detected=len(faces), faces=faces)
-
-
+    return DetectorResponse(faces_count=len(faces), faces=faces)

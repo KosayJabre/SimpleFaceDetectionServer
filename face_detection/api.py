@@ -1,11 +1,11 @@
 import time
 
-from .service import detect_faces, download_image
-from .schemas import FaceDetectionRequest, FaceDetectionResponse
-
+from fastapi import FastAPI, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from fastapi import FastAPI, HTTPException, Request
+
+from .schemas import FaceDetectionRequest, FaceDetectionResponse
+from .service import detect_faces, download_image
 
 
 app = FastAPI()
@@ -34,5 +34,3 @@ def detect_faces_post(request: Request, face_detection_request: FaceDetectionReq
 @app.get("/ready/")
 def ready(request: Request):
     return "Ready"
-
-

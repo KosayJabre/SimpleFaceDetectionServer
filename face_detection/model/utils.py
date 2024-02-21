@@ -1,13 +1,4 @@
-import numpy as np
 import torch
-
-
-def to_cuda(elements, device):
-    if torch.cuda.is_available():
-        if type(elements) == tuple or type(elements) == list:
-            return [x.to(device) for x in elements]
-        return elements.to(device)
-    return elements
 
 
 def get_device():

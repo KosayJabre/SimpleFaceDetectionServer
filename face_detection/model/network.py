@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.models._utils as _utils
 import torchvision.models as models
+import torchvision.models._utils as _utils
 
 
 def conv_bn(inp, oup, stride=1, leaky=0):
