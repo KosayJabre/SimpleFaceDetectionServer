@@ -8,3 +8,5 @@ torchvision
 Pillow
 python-multipart
 pytest
+httpx
+pytest-asyncio

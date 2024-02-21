@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
+from typing import List, Optional
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from slowapi import Limiter
@@ -47,8 +47,8 @@ async def detect_faces_from_base64(request: Request, face_detection_request: Bas
 async def detect_faces_from_files(
     request: Request,
     files: List[UploadFile] = File(...),
-    confidence_threshold: float = Form(0.5),
-    clip_boxes: bool = Form(True),
+    confidence_threshold: Optional[float] = Form(0.5),
+    clip_boxes: Optional[bool] = Form(True),
 ):
     images = []
     for file in files:
