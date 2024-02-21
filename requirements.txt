@@ -2,6 +2,6 @@ fastapi
 slowapi
 uvicorn
 pydantic
-opencv-python-headless
 requests
 torchvision[cpu]
+Pillow

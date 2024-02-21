@@ -1,28 +1,30 @@
 from face_detection.service import detect_faces, download_image
 
-import cv2
+from PIL import ImageDraw
 
-
-def draw_faces(im, bboxes):
+def draw_faces(image, bboxes):
+    draw = ImageDraw.Draw(image)
     for bbox in bboxes:
         x0, y0, x1, y1 = [int(_) for _ in bbox]
-        cv2.rectangle(im, (x0, y0), (x1, y1), (0, 0, 255), 2)
+        draw.rectangle([x0, y0, x1, y1], outline="red", width=2)
 
-
-def draw_landmarks(im, faces_landmarks):
+def draw_landmarks(image, faces_landmarks):
+    draw = ImageDraw.Draw(image)
     for landmarks in faces_landmarks:
         for landmark in landmarks:
             x, y = int(landmark.x), int(landmark.y)
-            cv2.circle(im, (x, y), 2, (0, 255, 0), -1)
+            # For drawing a circle, PIL expects the bounding box of the circle,
+            # so we calculate it based on the circle's radius.
+            radius = 2
+            draw.ellipse([x - radius, y - radius, x + radius, y + radius], fill="lime")
+
 
 
 if __name__ == "__main__":                
     image_url = "https://i.imgur.com/o4FejFz.jpeg"
-    cv2_image = download_image(image_url)
-    results = detect_faces([cv2_image, cv2_image])
+    image = download_image(image_url)
+    results = detect_faces([image, image])
     for result in results:
-        draw_faces(cv2_image, [face.bounding_box for face in result.faces])
-        draw_landmarks(cv2_image, [face.landmarks for face in result.faces])
-        cv2.imshow("Image", cv2_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        draw_faces(image, [face.bounding_box for face in result.faces])
+        draw_landmarks(image, [face.landmarks for face in result.faces])
+        image.show()
