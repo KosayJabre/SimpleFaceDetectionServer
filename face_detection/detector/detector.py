@@ -5,7 +5,6 @@ import zipfile
 import numpy as np
 import torch
 from PIL import Image
-from pydantic import Field
 from torchvision.ops import nms
 
 from .config import RESNET50_CONFIG
@@ -27,86 +26,85 @@ class RetinaNetDetector:
     def __init__(
         self,
         nms_iou_threshold: float,
-        fp16_inference: bool,
     ):
         self.nms_iou_threshold = nms_iou_threshold
-        self.fp16_inference = fp16_inference
         self.mean = np.array([104, 117, 123], dtype=np.float32)
         self.cfg = RESNET50_CONFIG
-        self.prior_box_cache = {}
 
         net = RetinaFace(cfg=self.cfg)
         net.eval()
         state_dict = torch.load(load_model_weights(), map_location=get_device())
-        state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
-        net.load_state_dict(state_dict)
+        net.load_state_dict({k.replace("module.", ""): v for k, v in state_dict.items()})
 
         self.net = net.to(get_device())
 
     def detect(self, images: np.ndarray, confidence_threshold=0.5, clip_boxes=True) -> tuple[np.ndarray, np.ndarray]:
-        # Resize images to max 1080x1080 because model only works well on smaller images
-        max_resolution = (1080, 1080)  
-        orig_shapes = [img.shape[:2] for img in images]
-        resized_images = []
-        for image in images:
-            if image.shape[0] > max_resolution[0] or image.shape[1] > max_resolution[1]:
-                img = Image.fromarray(image.astype('uint8'), 'RGB')
-                img.thumbnail(max_resolution, Image.LANCZOS)
-                image = np.array(img)
-            resized_images.append(image)
-        images = np.array(resized_images)
-
+        original_shapes = [img.shape[:2] for img in images]  # Keep track of shapes so we can scale bounding boxes back to original size
         processed_images = self._pre_process(images)
-        boxes, landms = self._detect(processed_images, return_landmarks=True)
+
+        # Feed-forward
+        boxes, landms = self._detect(processed_images)
 
         final_output_box = []
         final_output_landmarks = []
         for i, (boxes_i, landms_i, scores_i) in enumerate(zip(boxes, landms, boxes[:, :, -1])):
+            # Filter out low confidence detections
             keep = scores_i >= confidence_threshold
             boxes_i, landms_i, scores_i = boxes_i[keep], landms_i[keep], scores_i[keep]
 
-            # Separate box coordinates from confidence scores before NMS
-            box_coords = boxes_i[:, :4]  # Extract only the coordinates
+            # Filter out low confidence overlapping boxes
+            box_coords = boxes_i[:, :4]
             keep = nms(box_coords, scores_i, self.nms_iou_threshold)
 
             boxes_i, landms_i, scores_i = boxes_i[keep], landms_i[keep], scores_i[keep]
+
+            # Clipping makes sure the bounding boxes are within the image
             if clip_boxes:
                 boxes_i = boxes_i.clamp(0, 1)
-            boxes_i[:, [0, 2]] *= orig_shapes[i][1]
-            boxes_i[:, [1, 3]] *= orig_shapes[i][0]
+
+            # Convert bounding boxes and landmarks back to original size
+            boxes_i[:, [0, 2]] *= original_shapes[i][1]
+            boxes_i[:, [1, 3]] *= original_shapes[i][0]
             landms_i = landms_i.reshape(-1, 5, 2)
-            landms_i[:, :, 0] *= orig_shapes[i][1]
-            landms_i[:, :, 1] *= orig_shapes[i][0]
+            landms_i[:, :, 0] *= original_shapes[i][1]
+            landms_i[:, :, 1] *= original_shapes[i][0]
+
             final_output_box.append(torch.cat((boxes_i, scores_i.unsqueeze(-1)), dim=1).cpu().numpy())
             final_output_landmarks.append(landms_i.cpu().numpy())
 
         return final_output_box, final_output_landmarks
 
-    def _pre_process(self, image: np.ndarray) -> torch.Tensor:
-        image = image.astype(np.float32) - self.mean
-        image = np.moveaxis(image, -1, 1)
-        image = torch.from_numpy(image)
-        return image.to(get_device())
+    def _pre_process(self, images: np.ndarray) -> torch.Tensor:
+        """
+        Resize and normalize images. We have to resize because the model was trained on smaller images.
+        The bounding boxes are converted back to the original size after detection.
+        """
+        max_resolution = (1080, 1080)
+        resized_images = []
+        for image in images:
+            if image.shape[0] > max_resolution[0] or image.shape[1] > max_resolution[1]:
+                img = Image.fromarray(image.astype("uint8"), "RGB")
+                img.thumbnail(max_resolution, Image.LANCZOS)
+                image = np.array(img)
+            resized_images.append(image)
+        images = np.array(resized_images)
+        images = images.astype(np.float32) - self.mean
+        images = np.moveaxis(images, -1, 1)
+        images = torch.from_numpy(images)
+        return images.to(get_device())
 
     @torch.no_grad()
-    def _detect(self, image: torch.Tensor, return_landmarks=False):
-        with torch.cuda.amp.autocast(enabled=self.fp16_inference):
-            loc, conf, landms = self.net(image)
-            scores = conf[:, :, 1:]
-            height, width = image.shape[2:]
-            priors = self._get_prior_boxes((height, width))
-            boxes = batched_decode(loc, priors.data, self.cfg["variance"])
-            boxes = torch.cat((boxes, scores), dim=-1)
-            if return_landmarks:
-                landms = decode_landm(landms, priors.data, self.cfg["variance"])
-                return boxes, landms
-        return boxes
+    def _detect(self, image: torch.Tensor):
+        locations, confidences, landmarks = self.net(image)
+        scores = confidences[:, :, 1:]
+        height, width = image.shape[2:]
+        priors = self._get_prior_boxes((height, width))
+        boxes = batched_decode(locations, priors.data, self.cfg["variance"])
+        boxes = torch.cat((boxes, scores), dim=-1)
+        landmarks = decode_landm(landmarks, priors.data, self.cfg["variance"])
+        return boxes, landmarks
 
     def _get_prior_boxes(self, image_size):
-        """Cache or generate prior boxes."""
-        if image_size in self.prior_box_cache:
-            return self.prior_box_cache[image_size]
         priorbox = PriorBox(self.cfg, image_size=image_size)
         priors = priorbox.forward()
-        self.prior_box_cache[image_size] = priors
         return priors.to(get_device())

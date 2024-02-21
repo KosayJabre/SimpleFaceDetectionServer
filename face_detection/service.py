@@ -13,7 +13,6 @@ from .schemas import DetectorResponse, Face, Landmark, LandmarkType
 
 detector = RetinaNetDetector(
     nms_iou_threshold=0.3,
-    fp16_inference=False,
 )
 
 

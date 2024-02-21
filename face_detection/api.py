@@ -14,7 +14,7 @@ app = FastAPI(
     description="Quick and easy face detection using RetinaNet backed by ResNet50. Supports URL, base64, and binary images as input.",
     version="0.1.0",
     contact={"name": "Kosay Jabre", "url": "https://kosayjabre.com"},
-    license_info={"name": "Unlicense", "url": "https://unlicense.org"},
+    license_info={"name": "MIT"},
 )
 
 
