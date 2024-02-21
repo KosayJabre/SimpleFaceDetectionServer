@@ -89,7 +89,6 @@ class RetinaNetDetector:
 
     @torch.no_grad()
     def _detect(self, image: torch.Tensor, return_landmarks=False):
-        image = image.flip(-3)  # BGR to RGB
         with torch.cuda.amp.autocast(enabled=self.fp16_inference):
             loc, conf, landms = self.net(image)
             scores = conf[:, :, 1:]
