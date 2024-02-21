@@ -22,21 +22,13 @@ def load_model_weights():
     return io.BytesIO(model_bytes)
 
 
-class RetinaNetDetectorRequestParameters(BaseModel):
-    confidence_threshold: float = Field(0.5, ge=0, le=1)
-    clip_boxes: bool = True
-    max_resolution: int = None
-
-
 class RetinaNetDetector:
     def __init__(
         self,
         nms_iou_threshold: float,
-        max_resolution: int,
         fp16_inference: bool,
     ):
         self.nms_iou_threshold = nms_iou_threshold
-        self.max_resolution = max_resolution
         self.fp16_inference = fp16_inference
         self.mean = np.array([104, 117, 123], dtype=np.float32)
         self.cfg = RESNET50_CONFIG
@@ -50,21 +42,15 @@ class RetinaNetDetector:
 
         self.net = net.to(get_device())
 
-    def detect(
-        self,
-        images: np.ndarray,
-        params: RetinaNetDetectorRequestParameters = RetinaNetDetectorRequestParameters(),
-    ) -> tuple[np.ndarray, np.ndarray]:
+    def detect(self, images: np.ndarray, confidence_threshold=0.5, clip_boxes=True) -> tuple[np.ndarray, np.ndarray]:
         processed_images = self._pre_process(images)
         orig_shape = images.shape[1:3]
         boxes, landms = self._detect(processed_images, return_landmarks=True)
 
         final_output_box = []
         final_output_landmarks = []
-        for i, (boxes_i, landms_i, scores_i) in enumerate(
-            zip(boxes, landms, boxes[:, :, -1])
-        ):
-            keep = scores_i >= params.confidence_threshold
+        for i, (boxes_i, landms_i, scores_i) in enumerate(zip(boxes, landms, boxes[:, :, -1])):
+            keep = scores_i >= confidence_threshold
             boxes_i, landms_i, scores_i = boxes_i[keep], landms_i[keep], scores_i[keep]
 
             # Separate box coordinates from confidence scores before NMS
@@ -72,16 +58,14 @@ class RetinaNetDetector:
             keep = nms(box_coords, scores_i, self.nms_iou_threshold)
 
             boxes_i, landms_i, scores_i = boxes_i[keep], landms_i[keep], scores_i[keep]
-            if params.clip_boxes:
+            if clip_boxes:
                 boxes_i = boxes_i.clamp(0, 1)
             boxes_i[:, [0, 2]] *= orig_shape[1]
             boxes_i[:, [1, 3]] *= orig_shape[0]
             landms_i = landms_i.reshape(-1, 5, 2)
             landms_i[:, :, 0] *= orig_shape[1]
             landms_i[:, :, 1] *= orig_shape[0]
-            final_output_box.append(
-                torch.cat((boxes_i, scores_i.unsqueeze(-1)), dim=1).cpu().numpy()
-            )
+            final_output_box.append(torch.cat((boxes_i, scores_i.unsqueeze(-1)), dim=1).cpu().numpy())
             final_output_landmarks.append(landms_i.cpu().numpy())
 
         return final_output_box, final_output_landmarks
@@ -90,12 +74,6 @@ class RetinaNetDetector:
         image = image.astype(np.float32) - self.mean
         image = np.moveaxis(image, -1, 1)
         image = torch.from_numpy(image)
-        if self.max_resolution:
-            shrink = min(self.max_resolution / max(image.shape[2:]), 1)
-            size = (int(image.shape[2] * shrink), int(image.shape[3] * shrink))
-            image = torch.nn.functional.interpolate(
-                image[None], size=size, mode="bilinear", align_corners=False
-            )
         return image.to(get_device())
 
     @torch.no_grad()

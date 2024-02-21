@@ -13,7 +13,6 @@ from .schemas import DetectorResponse, Face, Landmark, LandmarkType
 
 detector = RetinaNetDetector(
     nms_iou_threshold=0.3,
-    max_resolution=None,
     fp16_inference=False,
 )
 
@@ -37,8 +36,8 @@ def base64_to_image(base64_str: str) -> Image.Image:
     image_file = BytesIO(image_bytes)
     image = Image.open(image_file)
 
-    if image.mode != 'RGB':
-        image = image.convert('RGB')
+    if image.mode != "RGB":
+        image = image.convert("RGB")
 
     return image
 
@@ -47,26 +46,24 @@ def binary_to_image(binary: bytes) -> Image.Image:
     image_file = BytesIO(binary)
     image = Image.open(image_file)
 
-    if image.mode != 'RGB':
-        image = image.convert('RGB')
+    if image.mode != "RGB":
+        image = image.convert("RGB")
 
     return image
 
 
-def detect_faces(images: List[Image.Image]) -> List[DetectorResponse]:
-    images_np = np.array([np.array(image.convert('RGB'), dtype=np.float32) for image in images])
+def detect_faces(images: List[Image.Image], confidence_threshold=0.5, clip_boxes=True) -> List[DetectorResponse]:
+    images = np.array([np.array(image.convert("RGB"), dtype=np.float32) for image in images])
 
-    batch_boxes, batch_landmarks = detector.detect(images_np)
+    batch_boxes, batch_landmarks = detector.detect(images, confidence_threshold=confidence_threshold, clip_boxes=clip_boxes)
 
     detector_responses = []
     for image_boxes, image_landmarks in zip(batch_boxes, batch_landmarks):
         faces = []
         for box, landmarks in zip(image_boxes, image_landmarks):
-            bounding_box = box[:4]
-            confidence = box[4]
             face = Face(
-                bounding_box=bounding_box,
-                confidence=confidence,
+                bounding_box=box[:4],
+                confidence=box[4],
                 landmarks=[Landmark(x=landmark[0], y=landmark[1], type=list(LandmarkType)[i]) for i, landmark in enumerate(landmarks)],
             )
             faces.append(face)

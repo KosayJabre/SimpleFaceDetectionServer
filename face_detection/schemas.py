@@ -29,13 +29,18 @@ class DetectorResponse(BaseModel):
     faces: List[Face]
 
 
-class UrlFaceDetectionRequest(BaseModel):
+class FaceDetectionRequest(BaseModel):
+    confidence_threshold: float = 0.5
+    clip_boxes: bool = True
+
+
+class UrlFaceDetectionRequest(FaceDetectionRequest):
     images_url: List[str]
 
 
-class Base64FaceDetectionRequest(BaseModel):
+class Base64FaceDetectionRequest(FaceDetectionRequest):
     images_base64: List[str]
 
 
-class FaceDetectionResponse(BaseModel):
+class FaceDetectionResponse(FaceDetectionRequest):
     result: List[DetectorResponse]
