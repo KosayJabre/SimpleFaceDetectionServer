@@ -3,9 +3,9 @@ import torch
 
 def get_device():
     if torch.cuda.is_available():
-        return torch.device("cuda:0") 
+        return torch.device("cuda:0")
     else:
-        return torch.device("cpu") 
+        return torch.device("cpu")
 
 
 def batched_decode(loc, priors, variances, to_XYXY=True):

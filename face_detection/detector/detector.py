@@ -4,14 +4,15 @@ import zipfile
 
 import numpy as np
 import torch
-from pydantic import BaseModel, Field
+from PIL import Image
+from pydantic import Field
 from torchvision.ops import nms
 
 from .config import RESNET50_CONFIG
 from .network import RetinaFace
 from .prior_box import PriorBox
 from .utils import batched_decode, decode_landm, get_device
-from PIL import Image
+
 
 def load_model_weights():
     current_file_directory = os.path.dirname(os.path.abspath(__file__))
