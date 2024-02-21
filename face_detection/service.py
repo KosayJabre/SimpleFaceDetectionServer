@@ -6,7 +6,7 @@ import numpy as np
 import requests
 from PIL import Image
 
-from face_detection.model.detector import RetinaNetDetector
+from face_detection.detector.detector import RetinaNetDetector
 
 from .schemas import DetectorResponse, Face, Landmark, LandmarkType
 

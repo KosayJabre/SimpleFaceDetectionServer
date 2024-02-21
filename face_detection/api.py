@@ -10,7 +10,20 @@ from .schemas import Base64FaceDetectionRequest, FaceDetectionResponse, UrlFaceD
 from .service import base64_to_image, binary_to_image, detect_faces, download_image
 
 
-app = FastAPI()
+app = FastAPI(title="Simple Face Detection", 
+              description="Quick and easy face detection using RetinaNet backed by ResNet50. Supports URL, base64, and binary images as input.", 
+              version="0.1.0", 
+              contact={
+                  "name": "Kosay Jabre", 
+                  "url": "https://kosayjabre.com"
+                }, 
+              license_info={
+                  "name": "Unlicense", 
+                  "url": "https://unlicense.org"
+                  }
+            )
+
+
 limiter = Limiter(key_func=get_remote_address)
 
 
