@@ -20,10 +20,16 @@ class DetectorResponse(BaseModel):
     faces: List[Face]
 
 
-class FaceDetectionRequest(BaseModel):
-    images_url: Optional[List[str]]
-    images_base64: Optional[List[str]]
-    images_binary: Optional[List[bytes]]
+class UrlFaceDetectionRequest(BaseModel):
+    images_url: List[str]
+
+
+class Base64FaceDetectionRequest(BaseModel):
+    images_base64: List[str]
+
+
+class BinaryFaceDetectionRequest(BaseModel):
+    images_binary: List[bytes]
 
 
 class FaceDetectionResponse(BaseModel):

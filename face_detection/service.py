@@ -1,6 +1,7 @@
+import base64
+from io import BytesIO
 from typing import List
 
-import cv2
 import numpy as np
 import requests
 from PIL import Image
@@ -31,6 +32,17 @@ def download_image(image_url: str) -> Image.Image:
     except Exception as err:
         print(f"An error occurred: {err}")
         return None
+
+
+def base64_to_image(base64_str: str) -> Image.Image:
+    image_bytes = base64.b64decode(base64_str)
+    image_file = BytesIO(image_bytes)
+    image = Image.open(image_file)
+
+    if image.mode != 'RGB':
+        image = image.convert('RGB')
+
+    return image
 
 
 def bgr_to_rgb(image: np.ndarray) -> np.ndarray:
