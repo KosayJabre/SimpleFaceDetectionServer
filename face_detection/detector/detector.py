@@ -95,14 +95,15 @@ class RetinaNetDetector:
 
     @torch.no_grad()
     def _detect(self, image: torch.Tensor):
-        locations, confidences, landmarks = self.net(image)
-        scores = confidences[:, :, 1:]
-        height, width = image.shape[2:]
-        priors = self._get_prior_boxes((height, width))
-        boxes = batched_decode(locations, priors.data, self.cfg["variance"])
-        boxes = torch.cat((boxes, scores), dim=-1)
-        landmarks = decode_landm(landmarks, priors.data, self.cfg["variance"])
-        return boxes, landmarks
+        with torch.cuda.amp.autocast(enabled=True):
+            locations, confidences, landmarks = self.net(image)
+            scores = confidences[:, :, 1:]
+            height, width = image.shape[2:]
+            priors = self._get_prior_boxes((height, width))
+            boxes = batched_decode(locations, priors.data, self.cfg["variance"])
+            boxes = torch.cat((boxes, scores), dim=-1)
+            landmarks = decode_landm(landmarks, priors.data, self.cfg["variance"])
+            return boxes, landmarks
 
     def _get_prior_boxes(self, image_size):
         priorbox = PriorBox(self.cfg, image_size=image_size)

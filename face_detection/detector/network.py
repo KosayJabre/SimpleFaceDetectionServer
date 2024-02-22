@@ -188,25 +188,26 @@ class RetinaFace(nn.Module):
         return landmarkhead
 
     def forward(self, inputs):
-        out = self.body(inputs)
+        with torch.no_grad():
+            out = self.body(inputs)
 
-        # FPN
-        fpn = self.fpn(out)
+            # FPN
+            fpn = self.fpn(out)
 
-        # SSH
-        feature1 = self.ssh1(fpn[0])
-        feature2 = self.ssh2(fpn[1])
-        feature3 = self.ssh3(fpn[2])
-        features = [feature1, feature2, feature3]
+            # SSH
+            feature1 = self.ssh1(fpn[0])
+            feature2 = self.ssh2(fpn[1])
+            feature3 = self.ssh3(fpn[2])
+            features = [feature1, feature2, feature3]
 
-        bbox_regressions = torch.cat(
-            [self.BboxHead[i](feature) for i, feature in enumerate(features)], dim=1
-        )
-        classifications = torch.cat(
-            [self.ClassHead[i](feature) for i, feature in enumerate(features)], dim=1
-        )
-        ldm_regressions = torch.cat(
-            [self.LandmarkHead[i](feature) for i, feature in enumerate(features)], dim=1
-        )
+            bbox_regressions = torch.cat(
+                [self.BboxHead[i](feature) for i, feature in enumerate(features)], dim=1
+            )
+            classifications = torch.cat(
+                [self.ClassHead[i](feature) for i, feature in enumerate(features)], dim=1
+            )
+            ldm_regressions = torch.cat(
+                [self.LandmarkHead[i](feature) for i, feature in enumerate(features)], dim=1
+            )
 
-        return (bbox_regressions, classifications.softmax(dim=-1), ldm_regressions)
+            return (bbox_regressions, classifications.softmax(dim=-1), ldm_regressions)
