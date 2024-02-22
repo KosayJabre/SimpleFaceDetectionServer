@@ -63,7 +63,7 @@ def detect_faces(images: List[Image.Image], confidence_threshold=0.5, clip_boxes
             face = Face(
                 bounding_box=box[:4],
                 confidence=box[4],
-                landmarks=[Landmark(x=landmark[0], y=landmark[1], type=list(LandmarkType)[i]) for i, landmark in enumerate(landmarks)],
+                landmarks=[Landmark(position=(landmark[0], landmark[1]), type=list(LandmarkType)[i]) for i, landmark in enumerate(landmarks)],
             )
             faces.append(face)
         detector_responses.append(DetectorResponse(faces_count=len(faces), faces=faces))

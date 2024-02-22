@@ -13,8 +13,7 @@ class LandmarkType(Enum):
 
 
 class Landmark(BaseModel):
-    x: float
-    y: float
+    position: List[float]
     type: LandmarkType
 
 
@@ -42,5 +41,5 @@ class Base64FaceDetectionRequest(FaceDetectionRequest):
     images_base64: List[str]
 
 
-class FaceDetectionResponse(FaceDetectionRequest):
+class FaceDetectionResponse(BaseModel):
     result: List[DetectorResponse]
