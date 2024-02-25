@@ -134,6 +134,7 @@ There are some basic tests under `face_detection/tests`.
 They can be run with `python -m pytest .` from inside the directory.
 
 ## Reference
+```
 @misc{deng2019retinaface,
       title={RetinaFace: Single-stage Dense Face Localisation in the Wild}, 
       author={Jiankang Deng and Jia Guo and Yuxiang Zhou and Jinke Yu and Irene Kotsia and Stefanos Zafeiriou},
@@ -142,3 +143,4 @@ They can be run with `python -m pytest .` from inside the directory.
       archivePrefix={arXiv},
       primaryClass={cs.CV}
 }
+```
